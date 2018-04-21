@@ -11,13 +11,14 @@ class ServerError(Exception):
 class BadRequest(ServerError):
     pass
 
+test = False
 
 class EchoServerClientProtocol(asyncio.Protocol):
     """Класс для реализции сервера при помощи asyncio"""
 
     processor = Processor()
 
-    def __init__(self, test=False):
+    def __init__(self):
         super().__init__()
         self._buffer = b''
         self.test = test
