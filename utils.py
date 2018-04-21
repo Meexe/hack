@@ -7,3 +7,8 @@ def to_json(string):
 
 def from_json(string):
     return loads(string.decode('utf-8'))
+
+
+punctuation = '-;:., '
+
+vowels = ['а', 'и', 'у', 'э', 'о', 'я', 'ю', 'е', 'ё']

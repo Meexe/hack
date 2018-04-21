@@ -28,15 +28,26 @@ class Game(object):
     def __init__(self, player1, player2):
         self.player1 = player1
         self.player2 = player2
+
+        data1 = {'name': self.player2.name, 'turn': False}
+        data2 = {'name': self.player1.name, 'turn': True}
+
+        message1 = {'code': 'start', 'data': data1}
+        message2 = {'code': 'start', 'data': data2}
+
+        self.send(message1, self.player1.addr)
+        self.send(message2, self.player2.addr)
         self.turn = [1, False]
         self.methods = {''}
         self.string = ''
+        self.time = None
 
     def process(self, data):
         if not data['turn']:
             self.hand_turn()
 
-            self.string = {'string': data['string']}
+            self.string = data['string']
+            self.time = data['time']
             self.send(self.string, self.player2.addr)
 
         else:
@@ -44,7 +55,7 @@ class Game(object):
             self.hand_turn()
 
             rhyme = data['string']
-            damage = check_rhyme(self.string, rhyme)
+            damage = check_rhyme(self.string['string'], rhyme, self.time, data['time'])
             self.player1.hp -= damage
 
             if self.player1.hp <= 0:
@@ -54,8 +65,6 @@ class Game(object):
 
             message = {'string': rhyme, 'dmg': damage, 'turn': self.turn}
             self.send(message, self.player1)
-
-            message.pop('string')
             self.send(message, self.player2)
 
             self.player1, self.player2 = self.player2, self.player1
