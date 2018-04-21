@@ -1,14 +1,15 @@
-from random import randint
 from uuid import uuid4
 import asyncio
 from utils import *
 from philologist import check_rhyme
+
 
 class Client(object):
 
     def __init__(self, addr, name):
         self.addr = addr
         self.name = name
+        self.hp = 100
 
 
 class DataTcpProtocol(asyncio.Protocol):
@@ -44,6 +45,12 @@ class Game(object):
 
             rhyme = data['string']
             damage = check_rhyme(self.string, rhyme)
+            self.player1.hp -= damage
+
+            if self.player1.hp <= 0:
+                message = {'code': 'win', 'data': {'winner': self.player2.name}}
+                self.send(message, self.player1.addr)
+                self.send(message, self.player2.addr)
 
             message = {'string': rhyme, 'dmg': damage, 'turn': self.turn}
             self.send(message, self.player1)
@@ -87,7 +94,12 @@ class Processor(object):
         return response
 
     def on_ready(self, data, addr):
-        client = Client(data['name'], addr)
+        if data['name'] == 'nickname':
+            name = uuid4()
+        else:
+            name = data['name']
+
+        client = Client(name, addr)
         self.queue.append(client)
         self.start_game()
 

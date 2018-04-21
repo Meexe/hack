@@ -4,17 +4,23 @@ from utils import *
 from json import JSONDecodeError
 
 
+class ServerError(Exception):
+    pass
+
+
+class BadRequest(ServerError):
+    pass
+
+
 class EchoServerClientProtocol(asyncio.Protocol):
     """Класс для реализции сервера при помощи asyncio"""
 
-    # Обратите внимание на то, что storage является атрибутом класса
-    # Объект self.storage для всех экземмпляров класса EchoServerClientProtocol
-    # будет являться одним и тем же объектом для хранения метрик.
     processor = Processor()
 
-    def __init__(self):
+    def __init__(self, test=False):
         super().__init__()
         self._buffer = b''
+        self.test = test
 
     def process(self, data, addr):
         """Обработка входной команды сервера"""
@@ -29,20 +35,31 @@ class EchoServerClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         """Метод data_received вызывается при получении данных в сокете"""
         self._buffer += data
+
         try:
             decoded_data = from_json(self._buffer)
-        except (UnicodeDecodeError, JSONDecodeError):
-            return
+
+        except (UnicodeDecodeError, JSONDecodeError) as err:
+            raise BadRequest(err)
 
         self._buffer = b''
 
-        response = 'Ground Control To Major Tom'# self.process(decoded_data, self.addr)
+        print(f'Got {decoded_data} from {self.addr}')
 
-        # формируем успешный ответ
+        if not self.test:
+            response = self.process(decoded_data, self.addr)
+        else:
+            response = 'pong'
+
+        print(f'Sending {response}')
+
         self.transport.write(to_json(response))
+
+        self.transport.close()
 
 
 def run_server(host, port):
+    print(f'Starting server on {host}:{port}')
     loop = asyncio.get_event_loop()
     coro = loop.create_server(
         EchoServerClientProtocol,
@@ -57,6 +74,7 @@ def run_server(host, port):
     server.close()
     loop.run_until_complete(server.wait_closed())
     loop.close()
+    print('\nClosing server')
 
 
 if __name__ == "__main__":
