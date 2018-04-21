@@ -36,7 +36,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
         self._buffer = b''
 
-        response = self.process(decoded_data, self.addr)
+        response = 'Ground Control To Major Tom'# self.process(decoded_data, self.addr)
 
         # формируем успешный ответ
         self.transport.write(to_json(response))
@@ -60,4 +60,4 @@ def run_server(host, port):
 
 
 if __name__ == "__main__":
-    run_server('127.0.0.1', 8888)
+    run_server('192.168.100.185', 8888)
