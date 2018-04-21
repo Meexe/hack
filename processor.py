@@ -6,10 +6,11 @@ from philologist import check_rhyme
 
 class Client(object):
 
-    def __init__(self, addr, name):
+    def __init__(self, addr, name, words):
         self.addr = addr
         self.name = name
         self.hp = 100
+        self.words = words
 
 
 class DataTcpProtocol(asyncio.Protocol):
@@ -47,6 +48,7 @@ class Game(object):
             self.hand_turn()
 
             self.string = data['string']
+            self.validate(self.string)
             self.time = data['time']
             self.send(self.string, self.player2.addr)
 
@@ -85,6 +87,9 @@ class Game(object):
         loop.run_forever()
         loop.close()
 
+    def validate(self):
+        pass
+
 
 class Processor(object):
 
@@ -108,7 +113,9 @@ class Processor(object):
         else:
             name = data['name']
 
-        client = Client(name, addr)
+        words = data['words']
+
+        client = Client(name, addr, words)
         self.queue.append(client)
         self.start_game()
 

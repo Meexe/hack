@@ -11,7 +11,6 @@ class ServerError(Exception):
 class BadRequest(ServerError):
     pass
 
-test = False
 
 class EchoServerClientProtocol(asyncio.Protocol):
     """Класс для реализции сервера при помощи asyncio"""
@@ -21,7 +20,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
     def __init__(self):
         super().__init__()
         self._buffer = b''
-        self.test = test
 
     def process(self, data, addr):
         """Обработка входной команды сервера"""
@@ -47,10 +45,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
         print(f'Got {decoded_data} from {self.addr}')
 
-        if not self.test:
-            response = self.process(decoded_data, self.addr)
-        else:
-            response = 'pong'
+        response = self.process(decoded_data, self.addr)
 
         print(f'Sending {response}')
 

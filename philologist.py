@@ -13,11 +13,6 @@ def check_rhyme(str1, str2, time1, time2):
 
     if str1[-1][find_syllable(str1[-1])] == str2[-1][find_syllable(str2[-1])]:
         damage += 10
-        print(1)
-
-    if define_size(str1) == define_size(str2):
-        damage += 10
-        print(2)
 
     if time2 > time1:
         damage += 10
@@ -34,22 +29,6 @@ def find_syllable(word):
         pattern = word[:index]+'<b>'+letter.upper()+'</b>'+word[index+1:]
         if (letter in vowels) & (findall(pattern, resp.text) != []):
             return index
-
-
-def define_size(string):
-    vow = 0
-    syllables = []
-    for word in string:
-        count = find_syllable(word)
-        for letter in word:
-            if letter in vowels:
-                vow += 1
-                if vow != count:
-                    syllables.append(False)
-                else:
-                    syllables.append(True)
-
-    return syllables
 
 
 if __name__ == '__main__':
