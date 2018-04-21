@@ -2,6 +2,7 @@ from uuid import uuid4
 import asyncio
 from utils import *
 from philologist import check_rhyme
+from pymorphy2 import MorphAnalyzer
 
 
 class Client(object):
@@ -26,53 +27,52 @@ class DataTcpProtocol(asyncio.Protocol):
 
 class Game(object):
 
-    def __init__(self, player1, player2):
+    def __init__(self, game_id, player1, player2):
+        self.id = game_id
         self.player1 = player1
         self.player2 = player2
 
-        data1 = {'name': self.player2.name, 'turn': False}
-        data2 = {'name': self.player1.name, 'turn': True}
+        data1 = {'name': self.player2.name, 'turn': False, 'game_id': game_id}
+        data2 = {'name': self.player1.name, 'turn': True, 'game_id': game_id}
 
         message1 = {'code': 'start', 'data': data1}
         message2 = {'code': 'start', 'data': data2}
 
         self.send(message1, self.player1.addr)
         self.send(message2, self.player2.addr)
+
         self.turn = [1, False]
-        self.methods = {''}
         self.string = ''
         self.time = None
 
-    def process(self, data):
-        if not data['turn']:
+    def process(self, data, morph):
+        if not self.turn[1]:
             self.hand_turn()
 
             self.string = data['string']
-            self.validate(self.string)
+            self.validate(morph)
             self.time = data['time']
             self.send(self.string, self.player2.addr)
 
         else:
             self.next_turn()
-            self.hand_turn()
 
             rhyme = data['string']
             damage = check_rhyme(self.string['string'], rhyme, self.time, data['time'])
             self.player1.hp -= damage
 
-            if self.player1.hp <= 0:
-                message = {'code': 'win', 'data': {'winner': self.player2.name}}
-                self.send(message, self.player1.addr)
-                self.send(message, self.player2.addr)
-
             message = {'string': rhyme, 'dmg': damage, 'turn': self.turn}
             self.send(message, self.player1)
             self.send(message, self.player2)
+
+            if self.player1.hp <= 0:
+                processor.stop_game(self.id)
 
             self.player1, self.player2 = self.player2, self.player1
 
     def next_turn(self):
         self.turn[0] += 1
+        self.hand_turn()
 
     def hand_turn(self):
         self.turn[1] = not self.turn[1]
@@ -87,11 +87,17 @@ class Game(object):
         loop.run_forever()
         loop.close()
 
-    def validate(self):
-        pass
+    def validate(self, morph):
+        words = self.string.strip(punctuation).split()
+        for word in words:
+            if morph.parse(word)[0].normal_form not in self.player1.words:
+                return False
+        return True
 
 
 class Processor(object):
+
+    morph = MorphAnalyzer()
 
     def __init__(self, limit=5):
         self.queue = list()
@@ -113,7 +119,9 @@ class Processor(object):
         else:
             name = data['name']
 
-        words = data['words']
+        words = []
+        for word in data['words']:
+            words.append(self.morph.parse(word)[0].normal_form)
 
         client = Client(name, addr, words)
         self.queue.append(client)
@@ -121,12 +129,19 @@ class Processor(object):
 
     def process_game(self, data, addr):
         game = self.games[data.pop('game_id')]
-        game.process(data)
+        game.process(data, self.morph)
 
     def start_game(self):
         if len(self.games) < self.limit & len(self.queue) >= 2:
             player1 = self.queue.pop(0)
             player2 = self.queue.pop(0)
             game_id = uuid4()
-            game = Game(player1, player2)
+            game = Game(game_id, player1, player2)
             self.games.update({game_id: game})
+
+    def stop_game(self, game_id):
+        self.games.pop(game_id)
+        self.start_game()
+
+
+processor = Processor()

@@ -1,5 +1,5 @@
 import asyncio
-from processor import Processor
+from processor import processor
 from utils import *
 from json import JSONDecodeError
 
@@ -12,19 +12,17 @@ class BadRequest(ServerError):
     pass
 
 
-class EchoServerClientProtocol(asyncio.Protocol):
+class Server(asyncio.Protocol):
     """Класс для реализции сервера при помощи asyncio"""
-
-    processor = Processor()
 
     def __init__(self):
         super().__init__()
         self._buffer = b''
 
-    def process(self, data, addr):
+    @staticmethod
+    def process(data, addr):
         """Обработка входной команды сервера"""
-        response = {'code': 'ok',
-                    'data': self.processor.process(data, addr)}
+        response = processor.process(data, addr)
         return response
 
     def connection_made(self, transport):
@@ -57,10 +55,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 def run_server(host, port):
     print(f'Starting server on {host}:{port}')
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(
-        EchoServerClientProtocol,
-        host, port
-    )
+    coro = loop.create_server(Server, host, port)
     server = loop.run_until_complete(coro)
     try:
         loop.run_forever()
