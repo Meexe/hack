@@ -1,14 +1,16 @@
 import asyncio
-from processor import processor
+from processor import processor, ProcessorError
 from utils import *
 from json import JSONDecodeError
 
 
 class ServerError(Exception):
+    """Общий класс ошибок сервера"""
     pass
 
 
 class BadRequest(ServerError):
+    """Неправильный формат запроса"""
     pass
 
 
@@ -21,11 +23,12 @@ class Server(asyncio.Protocol):
 
     @staticmethod
     def process(data, addr):
-        """Обработка входной команды сервера"""
+        """Обработка запросов перенаправляется в класс Processor"""
         response = processor.process(data, addr)
         return response
 
     def connection_made(self, transport):
+        """Метод connection_made вызывается при открытии нового подключения"""
         self.transport = transport
         self.addr = transport.get_extra_info('peername')
 
@@ -34,21 +37,28 @@ class Server(asyncio.Protocol):
         self._buffer += data
 
         try:
-            decoded_data = from_json(self._buffer)
+            request = from_json(self._buffer)
 
         except (UnicodeDecodeError, JSONDecodeError) as err:
-            raise BadRequest(err)
+            response = {'code': 'error',
+                        'data': str(err)}
+            self.transport.write(to_json(response))
+            self.transport.close()
+            return
 
         self._buffer = b''
 
-        print(f'Got {decoded_data} from {self.addr}')
+        print(f'Got {request} from {self.addr}')
 
-        response = self.process(decoded_data, self.addr)
+        try:
+            response = self.process(request, self.addr)
+
+        except ProcessorError as err:
+            response = {'code': 'error',
+                        'data': str(err)}
 
         print(f'Sending {response}')
-
         self.transport.write(to_json(response))
-
         self.transport.close()
 
 
