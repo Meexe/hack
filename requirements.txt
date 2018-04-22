@@ -1,0 +1,9 @@
+certifi==2018.4.16
+chardet==3.0.4
+DAWG-Python==0.7.2
+docopt==0.6.2
+idna==2.6
+pymorphy2==0.8
+pymorphy2-dicts==2.4.393442.3710985
+requests==2.18.4
+urllib3==1.22
