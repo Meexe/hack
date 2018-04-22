@@ -146,7 +146,14 @@ class Processor(object):
 
     def process(self, data, addr):
         """Метод, вызывающий другие методы и передающий туда данные"""
-        func = self.methods[data['code']]
+        try:
+            func = self.methods[data['code']]
+        except KeyError:
+            raise ProcessorError('no code')
+
+        except TypeError:
+            raise ProcessorError('bad request')
+
         result = func(data['data'], addr)
         response = {'code': 'ok', 'data': result}
         return response

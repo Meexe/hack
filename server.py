@@ -31,6 +31,7 @@ class Server(asyncio.Protocol):
         """Метод connection_made вызывается при открытии нового подключения"""
         self.transport = transport
         self.addr = transport.get_extra_info('peername')
+        print(f'Connection from {self.addr}')
 
     def data_received(self, data):
         """Метод data_received вызывается при получении данных в сокете"""
@@ -48,14 +49,18 @@ class Server(asyncio.Protocol):
 
         self._buffer = b''
 
-        print(f'Got {request} from {self.addr}')
+        print(f'Got {request}')
 
-        try:
-            response = self.process(request, self.addr)
+        if request == 'ping':
+            response = 'pong'
 
-        except ProcessorError as err:
-            response = {'code': 'error',
-                        'data': str(err)}
+        else:
+            try:
+                response = self.process(request, self.addr)
+
+            except ProcessorError as err:
+                response = {'code': 'error',
+                            'data': str(err)}
 
         print(f'Sending {response}')
         self.transport.write(to_json(response))
@@ -79,4 +84,4 @@ def run_server(host, port):
 
 
 if __name__ == "__main__":
-    run_server('192.168.100.185', 8888)
+    run_server('172.20.10.13', 8888)
