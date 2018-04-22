@@ -48,6 +48,7 @@ class Server(asyncio.Protocol):
             self.transport.close()
             return
 
+
         self._buffer = b''
 
         print(f'Got {request}')
