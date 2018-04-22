@@ -43,6 +43,7 @@ class Server(asyncio.Protocol):
         except (UnicodeDecodeError, JSONDecodeError) as err:
             response = {'code': 'error',
                         'data': str(err)}
+            print(f'Sending {response}')
             self.transport.write(to_json(response))
             self.transport.close()
             return
