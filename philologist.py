@@ -36,3 +36,5 @@ if __name__ == '__main__':
     str2 = 'Вознесся выше он главою непокорной '
     result = check_rhyme(str1, str2, 0, 0)
     print(result)
+
+#Added a new comment from VanaShmidt
